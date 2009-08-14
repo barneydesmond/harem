@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Starting meidokon xmlrpc_legacy daemon in DEVELOPMENT mode"
+./legacy_xmlrpc.py --config development

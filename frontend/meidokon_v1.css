@@ -1,0 +1,115 @@
+body
+{
+	background-color: #abcdef;
+	margin: 0px;
+	padding: 20px;
+}
+table#results
+{
+	width: 95%;
+	margin-top: 1em;
+}
+td
+{
+	padding: 0.5em;
+	vertical-align:top;
+}
+
+div.nonexistant
+{
+	border: 1px dotted;
+}
+
+div.cell
+{
+	position: relative;
+	display: inline;
+}
+div.cell img
+{
+	border: 1px solid blue;
+}
+div.cell div
+{
+	position: absolute;
+	top: 85%;
+	left: 0%;
+	min-width: 10em;
+	padding: 0.5em;
+	visibility: hidden;
+	background: olive;
+	border: 2px solid black;
+	color: black;
+	z-index: 1;
+}
+div.cell:hover div
+{
+	visibility: visible;
+}
+
+td ul.tag_tree {
+	padding:0.5em;
+}
+
+ul
+{
+	margin: 0px;
+}
+
+ul.tag_tree
+{
+	list-style: none;
+	padding-left: 0em;
+}
+
+ul.tag_tree ul
+{
+	padding-left: 2em;
+}
+
+ul.attribute_list
+{
+	padding-left: 0em;
+	list-style: none inside;
+	font-size: smaller;
+}
+
+table.metadata th
+{
+	text-align: right;
+	font-size: small;
+	padding: 0px;
+}
+table.metadata td
+{
+	text-align: left;
+	font-size: small;
+	padding: 0px;
+}
+
+.borderless
+{
+	border: 0px;
+}
+
+.tagcontainer
+{
+	min-width: 24%;
+	float: left;
+}
+
+.taglist
+{ 
+	border: 1px solid;
+	text-align: left;
+	margin: 2px;
+	padding:5px;
+	height:30em;
+	overflow:auto;
+}
+
+.taglist_header
+{
+	white-space: nowrap;
+	margin: 1px;
+}

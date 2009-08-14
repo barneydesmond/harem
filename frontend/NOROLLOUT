@@ -1,0 +1,8 @@
+NOROLLOUT
+Makefile
+*.pyc
+.cvsignore
+svn-commit*tmp
+.*.swp
+.*.*.swp
+.svn

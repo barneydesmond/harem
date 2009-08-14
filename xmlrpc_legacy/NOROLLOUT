@@ -1,0 +1,9 @@
+P /supervise**
+H /NOROLLOUT
+H /Makefile
+H /devrun
+H .cvsignore
+H svn-commit*tmp
+H .*.swp
+H .*.*.swp
+H .svn

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Starting meidokon xmlrpc_legacy daemon in PRODUCTION mode"
+exec setuidgid meidokonxmlrpc ./legacy_xmlrpc.py

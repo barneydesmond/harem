@@ -1,0 +1,78 @@
+body
+{
+	background-color: #abcdef;
+	margin-left:4%;
+	margin-right:4%;
+	margin-top:2%;
+}
+table#results
+{
+	width: 95%;
+	margin-top: 1em;
+}
+td
+{
+	padding: 0.5em;
+	vertical-align:top;
+}
+
+div.nonexistant
+{
+	border: 1px dotted;
+}
+
+div.cell
+{
+	position: relative;
+	display: inline;
+}
+div.cell img
+{
+	border: 1px solid blue;
+}
+div.cell div
+{
+	position: absolute;
+	top: 85%;
+	left: 0%;
+	min-width: 10em;
+	padding: 0.5em;
+	visibility: hidden;
+	background: olive;
+	border: 2px solid black;
+	color: black;
+	z-index: 1;
+}
+div.cell:hover div
+{
+	visibility: visible;
+}
+
+ul.tag_tree
+{
+	list-style: none;
+	padding-left: 0em;
+}
+
+ul.tag_tree ul
+{
+	padding-left: 2em;
+}
+
+table.metadata th
+{
+	text-align: right;
+	font-size: small;
+	padding: 0px;
+}
+table.metadata td
+{
+	text-align: left;
+	font-size: small;
+	padding: 0px;
+}
+
+.borderless
+{
+	border: 0px;
+}

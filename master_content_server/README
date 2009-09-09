@@ -1,0 +1,31 @@
+= Purpose =
+This is the master content server's frontend. File uploads are sent here either from a client app or the web-based frontend.
+
+= Running notes =
+As this is expected to be run by a webserver, the content directories will need to be writeable by the webserver. An alternative is to have suexec configured. This is recommended, as it means the content directories don't need to be writeable by non-owner users.
+
+= Files =
+ * _full, _mid, _thumb, _probation - content directories. New files will be placed here and served from here. Needs to be writeable as detailed above.
+ * hash_full.py, hash_mid.py, hash_thumb.py - Accept a SHA1 hash as a the query string and return a redirect to the real file's location
+ * .htaccess - Sets up the 404.png for any images that can't be found, for whatever reason
+ * 404.png - Served for any missing images
+ * favicon.ico - for prettiness
+ * file_upload.py - received insertions of new images, either POSTed from a form or as a URL in the query string
+ * force_insert.py - cut-down version of file_upload.py that can insert new files from commandline, filename taken as the first argument
+ * mod_autotag.py - attached to insertion functionality, does basic analysis of the image and send a set_tags directive to the metadata server
+ * manage_probation.py - currently view-only, lets you check out the state of the probation queue
+ * meidokon_v1.css - styling for the viewable pages
+ * conf.py - configuration parameters for other scripts
+ * xmlrpc.py - Interface for the metadata server to request release of an image in probation
+ * util_baseconvert.py - helper functions for converting between base16 and base32 SHA1 hashes
+ * util_errors.py - Functions and definitions for returning error messages when things go wrong
+ * util_html.py - Functions and definitions for HTML output of the viewable pages
+ * util_regexes.py - Definitions of useful regexes
+ * README - This file
+ * w3c - Validation image and P3P metadata
+
+
+= Data flows =
+Most new images will arrive by being POSTed to file_upload.py. Assuming the file is acceptable, it is placed in _probation/ and an entry is made in the `uploads` database table. An "add" request is then sent to the metadata server. If successful, a "set tags" request is also made. Neither of these requests is required to be successful, not is it expected.
+
+If the "add" request is accepted by the server, a reverse call is made to `xmlrpc.py`, requesting the release of the file. The file will then be processed and copied to the three content directories. This is not expected to be successful, and the metadata server will happily maintain metadata for files that aren't released.

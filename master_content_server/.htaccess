@@ -1,0 +1,3 @@
+<FilesMatch "\.(gif|jpe?g|png)$">
+	ErrorDocument 404 /404.png
+</FilesMatch>

@@ -7,7 +7,7 @@ TITLE = ": : meidokon.net : :"
 STYLESHEET = """<link rel="stylesheet" href="meidokon_v1.css" type="text/css" title="meidokon.net v1" />"""
 PRIVACY = """<link rel="P3Pv1" href="/w3c/p3p.xml" />"""
 CONTENT_TYPE = """<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />"""
-JAVASCRIPT = """<script type="text/javascript" src="meidokon.js" ></script>"""
+JAVASCRIPT = ''
 IE7_FIX = """<!-- compliance patch for microsoft browsers -->
 	<!--[if lt IE 7]>
 	<script src="/ie7/ie7-standard-p.js" type="text/javascript"></script>

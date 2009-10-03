@@ -1,5 +1,14 @@
 #!/usr/bin/python
 
+# DEPENDENCIES
+# * DB API 2.0 provider
+#  * python-psycopg
+#  * python-psycopg2
+#  * python-pygresql
+# * Python Imaging Library
+#  * python-imaging
+
+
 # General imports
 import cgi
 import cgitb; cgitb.enable()
@@ -8,7 +17,7 @@ import sha
 import hmac
 import StringIO
 import urllib2
-import pgdb
+import psycopg2
 
 # For upload preparsing
 import Image
@@ -165,7 +174,7 @@ else:
 
 	# Enqueue the files in the local tracking database
 	try:
-		conn = pgdb.connect(host=db_hostname, database=db_dbname, user=db_username, password=db_password)
+		conn = psycopg2.connect(host=db_hostname, database=db_dbname, user=db_username, password=db_password)
 		cur = conn.cursor()
 	except Exception, data:
 		gen_error('GENERIC', "Couldn't connect to upload_tracking database")

@@ -1,12 +1,20 @@
-#!/usr/bin/python2.4 -u
+#!/usr/bin/python
+
+# DEPENDENCIES
+# * Python 2.5 or later, for hashlib (http://docs.python.org/library/hashlib.html)
+# * DB API 2.0 provider
+#  * python-psycopg
+#  * python-psycopg2
+#  * python-pygresql
+
 
 # General imports
 import SimpleXMLRPCServer
 import os
 import os.path
-import sha
+import hashlib
 import hmac
-import pgdb
+import psycopg2
 
 # For upload preparsing
 import Image
@@ -18,11 +26,11 @@ from conf import *
 
 
 def release(hash, signature):
-	h = hmac.new(RELEASE_SHARED_SECRET, hash, sha)
+	h = hmac.new(RELEASE_SHARED_SECRET, hash, hashlib.sha1)
 	if h.hexdigest() == signature:
 		retval = {"success":False}
 		try:
-			conn = pgdb.connect(host=db_hostname, database=db_dbname, user=db_username, password=db_password)
+			conn = psycopg2.connect(host=db_hostname, database=db_dbname, user=db_username, password=db_password)
 			cur = conn.cursor()
 		except Exception, data:
 			retval["explanation"] = "Failed to connect to DB"
@@ -34,8 +42,8 @@ def release(hash, signature):
 			filename, ext = d[0][0], d[0][1]
 			cur.execute('''DELETE FROM uploads WHERE hash=%(h)s''', {"h":hash} )
 			conn.commit()
-		except:
-			retval["explanation"] = "No such file to release"
+		except Exception, data:
+			retval["explanation"] = "No such file to release - %s" % str(data)
 			return retval
 
 		tmp_full	= os.path.join(PROBATION_DIR, filename)
@@ -115,7 +123,7 @@ def release(hash, signature):
 
 
 def delete(hash, signature):
-	h = hmac.new(DELETION_SHARED_SECRET, hash, sha)
+	h = hmac.new(DELETION_SHARED_SECRET, hash, hashlib.sha1)
 	if h.hexdigest() == signature:
 		final_full	= os.path.join(FULL_DIR, base16_to_base32(hash) + '.' + ext)
 		final_mid	= os.path.join(MID_DIR, 'm' + hash + '.jpg')

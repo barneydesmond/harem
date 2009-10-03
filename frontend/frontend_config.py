@@ -14,9 +14,9 @@ class Production(object):
 	## Controls the rendered HTML output for the frontend
 	# These paths work by appending the hash, you can point them anywhere
 	EDIT_PAGE_PATH = "edit_tags.py?"
-	THUMBNAIL_PATH = "http://tsutako.meidokon.net/hash_thumb.py?"
-	MID_VER_PATH = "http://tsutako.meidokon.net/hash_mid.py?"
-	FULL_VER_PATH = "http://tsutako.meidokon.net/hash_full.py?"
+	THUMBNAIL_PATH = "http://contentmaster.meidokon.net/hash_thumb.py?"
+	MID_VER_PATH = "http://contentmaster.meidokon.net/hash_mid.py?"
+	FULL_VER_PATH = "http://contentmaster.meidokon.net/hash_full.py?"
 	# These parameters govern the display of thumbnails returned by a query
 	DEFAULT_LIMIT = 50
 	DEFAULT_OFFSET = 0

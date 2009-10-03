@@ -29,3 +29,39 @@ As this is expected to be run by a webserver, the content directories will need 
 Most new images will arrive by being POSTed to file_upload.py. Assuming the file is acceptable, it is placed in _probation/ and an entry is made in the `uploads` database table. An "add" request is then sent to the metadata server. If successful, a "set tags" request is also made. Neither of these requests is required to be successful, not is it expected.
 
 If the "add" request is accepted by the server, a reverse call is made to `xmlrpc.py`, requesting the release of the file. The file will then be processed and copied to the three content directories. This is not expected to be successful, and the metadata server will happily maintain metadata for files that aren't released.
+
+
+= Migration notes =
+
+Writing these while I migrate the datastore from yoshino to shimako.
+
+ 1. new vhost and subdomain, will be "datastore1" (imaginative)
+ 1. rsync public_html/
+ 1. (as postgres user) createuser -S -D -R -P -e meidokon_upload_tracking // PHUCruspEP6br9yEfust
+ 1. update conf.py {{{
+db_hostname = 'localhost'
+db_dbname = 'meidokon_upload_tracking'
+db_username = 'meidokon_upload_tracking'
+db_password = 'PHUCruspEP6br9yEfust'
+}}}
+ 1. Create the DB (as postgres user): createdb -e -E UTF8 -O meidokon_upload_tracking meidokon_upload_tracking
+ 1. Create the uploads table {{{
+CREATE TABLE uploads (
+    hash character varying(40) NOT NULL,
+    width integer NOT NULL,
+    height integer NOT NULL,
+    ext character varying(4) DEFAULT ''::character varying NOT NULL,
+    initial_tagids text DEFAULT ''::text NOT NULL,
+    filename text NOT NULL,
+    CONSTRAINT tagids_format CHECK ((initial_tagids ~ '^$|^[0-9]+(,[0-9]+)*$'::text))
+);
+ALTER TABLE ONLY uploads ADD CONSTRAINT upload_tracking_pkey PRIMARY KEY (hash);
+}}}
+ 1. See what's broken
+  * Switch pgdb to psycopg2
+  * Oops, forgot I need the python-imaging package
+  * Gotta steal the probation DB...
+  * psycopg2 appears to return tuples, workaround this by casting to a list in manage_probation.py
+  * correct the datastore XMLRPC url in the xmlrpc appserver
+  * patch the code from pgdb->psycopg2
+  * upgrade the code to use hashlib instead of sha

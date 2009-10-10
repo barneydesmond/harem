@@ -10,7 +10,7 @@ from itertools import izip
 from itertools import repeat
 
 DEBUG = True
-#DEBUG = False
+DEBUG = False
 
 def application(environ, start_response):
 	# cwd gets set to /, which is annoying :(
@@ -233,7 +233,6 @@ def application(environ, start_response):
 
 	if DEBUG:
 		html_pretty("SUGGESTIONS DICTIONARY")
-		#html_pretty(s.listing)
 		html_pretty(good_search_terms)
 		html_pretty(failed_search_terms)
 
@@ -251,23 +250,15 @@ def application(environ, start_response):
 	###
 	##OLD CODE
 	#
-	# Get taglist
-	taglist = config.xmlrpc_server.get_all_tags('')['data'].values() # FIXME: this is very slow
-	real_tagids = set([ x['tagid'] for x in taglist ])
-	if DEBUG: timing_list.append( ('got taglist', time()) )
+	# Get all valid tagids
+	real_tagids = [ x[0] for x in config.xmlrpc_server.get_all_tagids()['data'] ]
+	if DEBUG: timing_list.append( ('got bare tagids', time()) )
 
-	# Get tag types
-	tag_types = config.xmlrpc_server.get_tag_types()['data'].values()
-	tag_types.sort(compare_by('display_order'))
-	if DEBUG: html_pretty(tag_types)
-	if DEBUG: timing_list.append( ('got tag types', time()) )
-
-	# Get requested tagids and derive the types
+	# Validate the queried tagids against the list of known-good tagids
 	# The following mess lets us keep the -ve tagids for exclusion but also check that they're legit
 	query_tagids = query_tagids.intersection(real_tagids).union(set([x for x in query_tagids if abs(x) in real_tagids]))
-	query_types = set([x['type'] for x in taglist if x['tagid'] in query_tagids])
 
-	# Arrange limit and offset
+	# Handle limit and offset
 	limit = positive_ints(form.getfirst("limit", config.DEFAULT_LIMIT))
 	if not limit:
 		limit = config.DEFAULT_LIMIT
@@ -276,11 +267,9 @@ def application(environ, start_response):
 	if not offset:
 		offset = config.DEFAULT_OFFSET
 	
-
-	# Arrange index-base for href links
+	# Setup index-base for href links
 	index = "?" + "&amp;".join(['q='+str(x) for x in query_tagids])
 	if DEBUG: html_pretty(index)
-
 
 
 
@@ -343,7 +332,6 @@ def application(environ, start_response):
 		print "Next %d" % limit
 	print "&gt;</div>"
 	if DEBUG: timing_list.append( ('displayed results', time()) )
-
 
 	if DEBUG:
 		start_time = timing_list[0][1]

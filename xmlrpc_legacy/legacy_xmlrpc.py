@@ -193,7 +193,26 @@ class LegacyXMLRPC(object):
 		return_tuples = dict(zip([str(x[0]) for x in results], [x[1] for x in results]))
 		return self.return_success("Found tags", return_tuples)
 		
-		
+
+	def get_all_tagids(self):
+		'''We just want all the tagids, with minimal overhead'''
+		try:
+			connection = self.pool.connection()
+			cursor = connection.cursor()
+		except:
+			return self.return_error("There was a problem connecting to the database.")
+
+		try:
+			cursor.execute('''SELECT "tagid" FROM get_all_tags('', '')''')
+			tagids = cursor.fetchall()
+		except:
+			return self.return_error("Error while getting the list of tagids")
+
+		cursor.close()
+		connection.close()
+		return_tuples = {}
+		return self.return_success("Found tagids", tagids)
+
 
 	def get_all_tags(self, type, parents={}):
 		"""Receive a type(string) and a struct of x->tagids, and return a
@@ -632,6 +651,7 @@ class LegacyXMLRPC(object):
 		self.server.register_function(self.get_tags)
 		self.server.register_function(self.get_child_tags)
 		self.server.register_function(self.get_all_tags)
+		self.server.register_function(self.get_all_tagids)
 		self.server.register_function(self.get_tag_types)
 		self.server.register_function(self.query)
 		self.server.register_function(self.set_tags)

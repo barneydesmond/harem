@@ -12,6 +12,12 @@ alphanum =		re.compile("""[^a-zA-Z0-9]+""", re.I)
 whitespace =		re.compile("""\s+""")
 only_digits =		re.compile("""^\d+$""")
 
+# Stuff for the WSGI cleanup version
+double_quoted_string = re.compile(r'"([^"]*?)"')
+alphanum_underscore_hyphen = re.compile(r'[^A-Za-z0-9_-]+')
+slash_trailing = re.compile(r'/.*')
+
+
 def chunkify_tag_input(tag_string):
 	tag_string = tag_string.lower()
 	tag_string = safe_space_quotes.sub('', tag_string)

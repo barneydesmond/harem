@@ -143,7 +143,7 @@ def application(environ, start_response):
 	if not q_box:
 		print '''<div class="center" style="background:DarkSlateGray; border:3px double black;">
 		<h1>%s</h1>
-		<p>News and stuff goes here</p>
+		<p>The old-style index page (written as CGI) is too heavy on the server. You're now pushed to the WSGI page, enjoy!</p>
 	</div>
 	''' % (cgi.escape(chosen_heading))
 	

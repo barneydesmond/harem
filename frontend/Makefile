@@ -58,6 +58,9 @@ rollout: update committed
 	rsync $(RSYNC_OPTIONS) \
 		. \
 		$(ROUSER)@$(ROHOST):$(RODIR)/
+	@echo "running deploy"
+	~/deploy_fixup.sh
+	@echo "done"
 	@echo "\\033[1;32m"
 	@echo "  ============================================"
 	@echo -n "  Rollout time is "
@@ -77,6 +80,9 @@ safe_rollout:
 	rsync $(SAFE_RSYNC_OPTIONS) \
 		. \
 		$(ROUSER)@$(ROHOST):$(RODIR)/
+	@echo "running deploy"
+	~/deploy_fixup.sh
+	@echo "done"
 	@echo "\\033[1;32m"
 	@echo "  ============================================"
 	@echo -n "  Rollout time is "

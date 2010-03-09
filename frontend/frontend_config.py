@@ -9,7 +9,7 @@ class Production(object):
 
 	## We have to deal with the master content server a little
 	# This is where we send file uploads to
-	file_upload_target = "http://tsutako.meidokon.net/file_upload.py"
+	file_upload_target = "http://datastore.meidokon.net/file_upload.py"
 
 	## Controls the rendered HTML output for the frontend
 	# These paths work by appending the hash, you can point them anywhere
@@ -47,9 +47,9 @@ class Production(object):
 	## Crufty old code we need to get rid of, the XMLRPC interface should handle giving suggestions
 	MAX_LEVENSHTEIN_DISTANCE = 20
 	db_hostname = "localhost"
-	db_dbname = "db_name"
-	db_username = "db_user"
-	db_password = "db_password"
+	db_dbname = "__DB_NAME__"
+	db_username = "__DB_USER__"
+	db_password = "__DB_PASSWORD__"
 	tbl_files = "files"
 	tbl_assoc = "assoc"
 	tbl_tags = "tags"

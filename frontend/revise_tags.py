@@ -14,7 +14,12 @@ from util_html import meidokon_http_headers
 from util_html import meidokon_html_headers
 from util_html import meidokon_html_footers
 from util_pretty_print import *
-from Suggestions import *
+
+class DummySuggestions(object):
+	'''Used to save rewriting too much code as a result of
+	switching to XMLRPC lookups for suggestions now'''
+	def __init__(self):
+		self.listing = {}
 
 # New-style config
 import frontend_config
@@ -60,8 +65,8 @@ meidokon_html_headers(page_title)
 
 # Anything that couldn't be matched won't have an entry in the suggestions, so
 # extract them manually and deal with them. Turns out rather convenient.
-s = Suggestions()
-build_suggestions(s, keywords)
+s = DummySuggestions()
+s.listing = config.xmlrpc_server.get_suggestions(keywords)['data']
 unmatched_keywords = list(set(keywords).difference(set(s.listing.keys())))
 
 
@@ -114,14 +119,5 @@ print """<input type="submit" value="Set tags" accesskey="s" style="margin-right
 print """</fieldset>"""
 print """</form>"""
 # ### CLOSE FORM HERE
-
-
-
-
-
-
-
-
-
 
 

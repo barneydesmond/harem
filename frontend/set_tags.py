@@ -11,6 +11,7 @@ from util_baseconvert import base32_to_base16
 from util_baseconvert import base16_to_base32
 from util_errors import http_error
 from util_errors import gen_error
+from util_errors import HOMEPAGE_LINK
 from util_html import meidokon_http_headers
 from util_html import meidokon_html_headers
 from util_html import meidokon_html_footers
@@ -94,7 +95,7 @@ else:
 
 print """</div>
 </form>"""
-print """<div>or <a href="index.py">Go home</a></div>"""
+print """<div>or <a href="%s">Go home</a></div>""" % HOMEPAGE_LINK
 
 
 if form.has_key("continue"):

@@ -15,6 +15,7 @@ from util_baseconvert import base32_to_base16
 from util_baseconvert import base16_to_base32
 from util_errors import http_error
 from util_errors import gen_error
+from util_errors import HOMEPAGE_LINK
 from util_html import meidokon_http_headers
 from util_html import meidokon_html_headers
 from util_html import meidokon_html_footers
@@ -29,7 +30,7 @@ atexit.register(meidokon_html_footers)
 
 
 # If the user passes a cookie specifying another content server, use it
-# Expects util_general to be imports as `from X import Y`
+# Expects util_general to be imported as `from X import Y`
 full_resolver = get_value_from_cookie('full_resolver')
 mid_resolver = get_value_from_cookie('mid_resolver')
 thumb_resolver = get_value_from_cookie('thumb_resolver')
@@ -74,7 +75,7 @@ if full_resolver or mid_resolver or thumb_resolver:
 	print '''</div>'''
 
 
-print """<div style="position:fixed; left:1em; top:1em; border:1px dotted"><a href="index.py">Go home</a></div>"""
+print """<div style="position:fixed; left:1em; top:1em; border:1px dotted"><a href="%s">Go home</a></div>""" % HOMEPAGE_LINK
 tags_on_files = {}
 
 # Collect data on 1 or many files
@@ -123,18 +124,17 @@ else:
 	print '<strong>Files being affected</strong><br />'
 	print '<ul class="tag_tree">'
 	for file_hash in hashes:
-		print '<li>' + file_hash + '</li>'
+		print '<li>%s</li>' % file_hash
 	print '</ul>'
 
 print '<form id="delete_file" method="post" action="delete_file.py"><div>'
 for file_hash in hashes:
-	print '<input type="hidden" name="hashes" value="' + file_hash + '" />'
-print 'Deletion password: <input type="password" name="password" /><br />'
-print '<input type="submit" value="Delete File/s" /><br />'
-print '</div></form>'
+	print '<input type="hidden" name="hashes" value="%s" />' % file_hash
+print """Deletion password: <input type="password" name="password" /><br />
+<input type="submit" value="Delete File/s" /><br />
+</div></form>"""
 
 print '</td>'
-
 
 
 
@@ -211,7 +211,7 @@ for tag_type in tag_types:
 		final_parents.sort(key=lambda x: x[1])
 		for parent in final_parents:
 			print """<div style="margin-bottom:1em;">"""
-			print """Child tags of """ + tag_type['display_depends'] + """: <em>""" + parent[1] + """</em><br />"""
+			print """Child tags of %s: <em>%s</em><br />""" % ( tag_type['display_depends'], parent[1] )
 			if len(hashes) == 1:
 				print_tag_tree(tags_of_type, tags_on_files.keys(), int(parent[0]), 0, nonlinking_tag_print, None, None)
 			else:
@@ -223,13 +223,13 @@ for tag_type in tag_types:
 
 	# Do the JS here now to hide the other tabs
 	print """<script type="text/javascript">"""
-	print """if('%s' != tabs[0]) document.getElementById('%s').style.display = 'none';""" % (tag_type['type'], tag_type['type'])
+	print """if('%(type)s' != tabs[0]) document.getElementById('%(type)s').style.display = 'none';""" % tag_type
 	print """</script>"""
 
 
 print """<div style="margin:1em;">"""
 for file_hash in hashes:
-	print '<input type="hidden" name="hashes" value="' + file_hash + '" />'
+	print '<input type="hidden" name="hashes" value="%s" />' % file_hash
 
 if len(hashes)==1:
 	print '<input type="hidden" name="mode" value="replace" /><br />'
@@ -246,18 +246,23 @@ print """</form>"""
 
 
 # Free-text tag entry box
-print """<form method="post" action="revise_tags.py">"""
-print """<div style="border: 1px dashed; padding:0.5em;">"""
-print """Or, enter a list of tags to apply:<br /><input type="text" name="tag_string" size="60" accesskey="l" /><br />"""
+print """
+<form method="post" action="revise_tags.py">
+<div style="border: 1px dashed; padding:0.5em;">
+Or, enter a list of tags to apply:<br /><input type="text" name="tag_string" size="60" accesskey="l" /><br />
+"""
 for file_hash in hashes:
-	print '<input type="hidden" name="hashes" value="' + file_hash + '" />'
-print """Add&nbsp;<input type="radio" name="mode" value="add" /><br />"""
-print """Replace&nbsp;<input type="radio" name="mode" value="replace" checked="checked" /><br />"""
-print """Remove&nbsp;<input type="radio" name="mode" value="remove" /><br />"""
-print """<input type="submit" value="Submit list" accesskey="s" />"""
-print """</div></form>"""
+	print '<input type="hidden" name="hashes" value="%s" />' % file_hash
+print """
+Add&nbsp;<input type="radio" name="mode" value="add" /><br />
+Replace&nbsp;<input type="radio" name="mode" value="replace" checked="checked" /><br />
+Remove&nbsp;<input type="radio" name="mode" value="remove" /><br />
+<input type="submit" value="Submit list" accesskey="s" />
+</div></form>
+"""
 
-
-print """</td></tr>"""
-print '</table>'
+print """
+</td></tr>
+</table>
+"""
 

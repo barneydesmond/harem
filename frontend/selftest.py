@@ -81,7 +81,7 @@ page_output.append("* PASS deleted the testfile %s" % test_filename)
 # 6. XML-RPC
 try:
 	import xmlrpclib
-	xmlrpc_server = xmlrpclib.ServerProxy("http://touko.meidokon.net:8002/RPC2")
+	xmlrpc_server = xmlrpclib.ServerProxy("http://xmlrpc.meidokon.net/RPC2")
 	taglist = xmlrpc_server.get_all_tags('')['data'].values()
 except Exception, data:
 	page_output.append_and_finish("* FAIL XMLRPC call: %s" % str(data))

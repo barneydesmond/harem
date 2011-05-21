@@ -12,6 +12,13 @@ from itertools import repeat
 DEBUG = True
 DEBUG = False
 
+class DummySuggestions(object):
+	'''Used to save rewriting too much code as a result of
+	switching to XMLRPC lookups for suggestions now'''
+	def __init__(self):
+		self.listing = {}
+
+
 def application(environ, start_response):
 	# cwd gets set to /, which is annoying :(
 	cwd = os.path.dirname(__file__)
@@ -34,7 +41,6 @@ def application(environ, start_response):
 		timing_list = []
 		timing_list.append( ('start', time()) )
 
-	import Suggestions
 	import frontend_config
 	config = frontend_config.get_config_for_hostname(os.environ.get('SERVER_NAME', 'NO_HOSTNAME'))
 
@@ -70,16 +76,16 @@ def application(environ, start_response):
 	except:
 		# FIXME: what sort of exception am I guarding against here? casting to int?
 		pass
-	
+
 	# Turn "quoted chunks" into underscore_separated_chunks
 	q = util_regexes.double_quoted_string.sub(space_to_under, q)
 	query_chunks = [ under_to_space(x).strip().lower() for x in util_regexes.alphanum_underscore_hyphen.split(q) if x ]
 
 
 	# Get some matches now
-	s = Suggestions.Suggestions()
+	s = DummySuggestions()
 	if q:
-		Suggestions.build_suggestions(s, query_chunks)
+		s.listing = config.xmlrpc_server.get_suggestions(query_chunks)['data']
 	good_search_terms = s.listing.keys()
 	failed_search_terms = set(query_chunks).difference(set(s.listing.keys()))
 	# Account for the suggestions engine giving us data different to our original queries
@@ -129,7 +135,7 @@ def application(environ, start_response):
 	print '''<h1 style="text-align:center;">meidokon.net</h1>
 	<h1 style="text-align:center;">&#12513;&#12452;&#12489;&#12467;&#12531;</h1>
 	'''
-	
+
 	# Search box
 	print '''<div style="text-align:center;">
 		<form action="%s" method="get">
@@ -146,7 +152,7 @@ def application(environ, start_response):
 		<p>The old-style index page (written as CGI) is too heavy on the server. You're now pushed to the WSGI page, enjoy!</p>
 	</div>
 	''' % (cgi.escape(chosen_heading))
-	
+
 	# Dynamic content starts here
 	print '''<div class="center" style="background:SteelBlue; border:3px double black;">'''
 
@@ -158,7 +164,7 @@ def application(environ, start_response):
 		<h2 style="margin-bottom:0px;"><em>Did you mean..?</em></h2>
 		<table class="suggestions">
 		'''
-	
+
 		# First line of refinement form - original search terms
 		print '''<tr>'''
 		for term in good_search_terms:
@@ -168,7 +174,7 @@ def application(environ, start_response):
 				colour = 'orange'
 			else:
 				colour = 'white'
-	
+
 			print '''<td style="background-color: %s;">
 			<strong>%s</strong>
 			</td>
@@ -178,9 +184,9 @@ def application(environ, start_response):
 			<strong>%s</strong>
 			</td>
 			''' % (term)
-		
+
 		print '''<td></td></tr>''' # Blank td for the search button next line
-	
+
 		# Second line of refinement - choices
 		print '''<tr>
 		<form method="get" action="%s">
@@ -205,7 +211,7 @@ def application(environ, start_response):
 		print '''<td><input type="submit" value="Revise search"></td>
 		</form>
 		</tr>'''
-	
+
 		# Third line of refinement - dump unwanted terms
 		print '''<tr>'''
 		for term in good_search_terms:
@@ -221,13 +227,13 @@ def application(environ, start_response):
 			query_string = urlencode(list(izip(repeat('q'), other_terms)))
 			print '''<td><a href="%s?%s">I don't want it</a></td>''' % (environ['SCRIPT_NAME'], query_string)
 		print '''<td></td></tr>''' # Blank td for the search button next line
-	
+
 		print '''</table>
 		<!-- BIGARSE TABLE ENDS HERE -->
 		'''
-	
-	
-	
+
+
+
 	print '''Lev threshold is %s<br />''' % (lev_threshold)
 	if DEBUG: timing_list.append( ('printed search boxes', time()) )
 
@@ -266,7 +272,7 @@ def application(environ, start_response):
 	offset = positive_ints(form.getfirst("offset", config.DEFAULT_OFFSET))
 	if not offset:
 		offset = config.DEFAULT_OFFSET
-	
+
 	# Setup index-base for href links
 	index = "?" + "&amp;".join(['q='+str(x) for x in query_tagids])
 	if DEBUG: html_pretty(index)

@@ -44,19 +44,6 @@ class Production(object):
 		'''This is my maid. There are many like it, but this one is mine.''',
 	]
 
-	## Crufty old code we need to get rid of, the XMLRPC interface should handle giving suggestions
-	MAX_LEVENSHTEIN_DISTANCE = 20
-	db_hostname = "localhost"
-	db_dbname = "__DB_NAME__"
-	db_username = "__DB_USER__"
-	db_password = "__DB_PASSWORD__"
-	tbl_files = "files"
-	tbl_assoc = "assoc"
-	tbl_tags = "tags"
-	tbl_types = "types"
-	tbl_inherit = "inheritances"
-	tbl_aliases = "aliases"
-
 
 
 class Development(Production):

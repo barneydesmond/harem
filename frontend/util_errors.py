@@ -8,7 +8,7 @@ from util_html import meidokon_html_footers
 DEFAULT_LANG = 'EN'
 DEFAULT_ERR = 'Status: 500 Internal Server Error'
 DEFAULT_MSG = 'Something Went Boom, Sorry'
-HOMEPAGE_LINK = 'index.py'
+HOMEPAGE_LINK = '/'
 
 # Start the HTTP errors
 HTTP_ERRORS = {}

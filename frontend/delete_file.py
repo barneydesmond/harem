@@ -12,6 +12,7 @@ from util_baseconvert import base32_to_base16
 from util_baseconvert import base16_to_base32
 from util_errors import http_error
 from util_errors import gen_error
+from util_errors import HOMEPAGE_LINK
 from util_html import meidokon_html_headers
 from util_html import meidokon_html_footers
 
@@ -38,7 +39,7 @@ print '''P3P: policyref="/w3c/privacy.p3p", CP=""'''
 print ""
 meidokon_html_headers("File deletion")
 
-print """<div style="position:fixed; left:1em; top:1em; border:1px dotted"><a href="index.py">Go home</a></div>"""
+print """<div style="position:fixed; left:1em; top:1em; border:1px dotted"><a href="%s">Go home</a></div>""" % HOMEPAGE_LINK
 
 print """<h3>Deleting:</h3><div><ul class="tag_tree">"""
 for hash in hashes:

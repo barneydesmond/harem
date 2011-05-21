@@ -14,14 +14,6 @@ class Production(object):
 	# Threshold when looking for matching tags, sort of a paranoia safety
 	MAX_LEVENSHTEIN_DISTANCE = 20
 
-	# Old code, theoretically allows you to run >1 instance in a single DB
-	tbl_files = "files"
-	tbl_assoc = "assoc"
-	tbl_tags = "tags"
-	tbl_types = "types"
-	tbl_inherit = "inheritances"
-	tbl_aliases = "aliases"
-
 	# Parameters for connecting to your content server
 	import xmlrpclib
 	master_content_xmlrpc_server = xmlrpclib.ServerProxy("http://datastore.meidokon.net/xmlrpc.py")

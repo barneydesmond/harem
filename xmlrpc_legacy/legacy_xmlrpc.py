@@ -124,7 +124,7 @@ class LegacyXMLRPC(object):
 			return self.return_error("There was a problem connecting to the database.")
 
 		try:
-			cursor.execute('SELECT * FROM "'+config.tbl_files+'" WHERE "hash"=%(hash)s', {'hash':hash})
+			cursor.execute('SELECT * FROM "files" WHERE "hash"=%(hash)s', {'hash':hash})
 			if not cursor.rowcount:
 				return self.return_error("No image was found with that hash")
 			column_names = [x[0] for x in cursor.description]
@@ -191,7 +191,7 @@ class LegacyXMLRPC(object):
 
 		tagid_string = ','.join([str(x) for x in parent_tagids.values()])
 		try:
-			cursor.execute('SELECT DISTINCT "tagid","name" FROM get_child_tags_from_string(%(parents)s) AS "tagid" NATURAL JOIN "'+config.tbl_tags+'"', {'parents':tagid_string})
+			cursor.execute('SELECT DISTINCT "tagid","name" FROM get_child_tags_from_string(%(parents)s) AS "tagid" NATURAL JOIN "tags"', {'parents':tagid_string})
 			results = cursor.fetchall()
 		except:
 			return self.return_error("There was a problem while trying to find child tags")
@@ -239,7 +239,7 @@ class LegacyXMLRPC(object):
 			tag_results = cursor.fetchall()
 			column_names = [x[0] for x in cursor.description]
 
-			cursor.execute('SELECT "'+config.tbl_tags+'"."tagid",COALESCE("r"."c", 0) FROM "'+config.tbl_tags+'" LEFT OUTER JOIN (SELECT "tagid",COUNT(*) AS "c" FROM "'+config.tbl_assoc+'" GROUP BY "tagid") AS "r" ON ("'+config.tbl_tags+'"."tagid"="r"."tagid")')
+			cursor.execute('SELECT "tags"."tagid",COALESCE("r"."c", 0) FROM "tags" LEFT OUTER JOIN (SELECT "tagid",COUNT(*) AS "c" FROM "assoc" GROUP BY "tagid") AS "r" ON ("tags"."tagid"="r"."tagid")')
 			tag_counts = cursor.fetchall()
 		except:
 			return self.return_error("Error while getting the list of tags")
@@ -268,7 +268,7 @@ class LegacyXMLRPC(object):
 			return self.return_error("There was a problem connecting to the database.")
 
 		try:
-			cursor.execute("""SELECT display_order,type,COALESCE("display_depends",'') AS "display_depends",COALESCE("contingent",0) AS "contingent" FROM """ + '"' + config.tbl_types + '"' + """ ORDER BY "display_order" """)
+			cursor.execute("""SELECT display_order,type,COALESCE("display_depends",'') AS "display_depends",COALESCE("contingent",0) AS "contingent" FROM "types" ORDER BY "display_order" """)
 			if not cursor.rowcount:
 				return self.return_error("No tag types defined in database.")
 			column_names = [x[0] for x in cursor.description]
@@ -315,7 +315,7 @@ class LegacyXMLRPC(object):
 			expanded_set.add(str(base_tag))
 
 			try:
-				cursor.execute('SELECT "tagid" FROM "'+config.tbl_inherit+'" WHERE "parent"=%(base)s', dict(base=base_tag))
+				cursor.execute('SELECT "tagid" FROM "inheritances" WHERE "parent"=%(base)s', dict(base=base_tag))
 				children_ids = [str(x[0]) for x in cursor.fetchall()]
 				for child in children_ids:
 					expanded_set.add(str(child))
@@ -324,7 +324,7 @@ class LegacyXMLRPC(object):
 				logmsg("Error: error during tag expansion of: %s; error was: %s" % (str(query_params), str(data)))
 				return self.return_error("Error while expanding search tags at depth=%s" % current_depth)
 
-		base = 'SELECT DISTINCT * FROM "' + config.tbl_files + '" '
+		base = 'SELECT DISTINCT * FROM "files" '
 		orderlimit = ' ORDER BY date_added DESC LIMIT ' + str(limit+1) + ' OFFSET ' + str(offset)
 
 
@@ -345,12 +345,12 @@ class LegacyXMLRPC(object):
 					del query_components[0] # Remove the closing '%'
 				elif query_components[0] == '!':
 					if query_components[1] == '(':
-						query_buffer = query_buffer + '(SELECT "hash" FROM "' + config.tbl_assoc + '" WHERE "hash" NOT IN ( '
+						query_buffer = query_buffer + '(SELECT "hash" FROM "assoc" WHERE "hash" NOT IN ( '
 						del query_components[0:2]
 					else:
 						raise QueryException, "! not followed by ( in query: " + str(query)
 				elif query_components[0] == '(':
-					query_buffer = query_buffer + '(SELECT "hash" FROM "' + config.tbl_assoc + '" WHERE "hash" IN ( '
+					query_buffer = query_buffer + '(SELECT "hash" FROM "assoc" WHERE "hash" IN ( '
 					del query_components[0]
 				elif query_components[0] == ')':
 					query_buffer = query_buffer + ')) '
@@ -362,7 +362,7 @@ class LegacyXMLRPC(object):
 					query_buffer = query_buffer + ' INTERSECT '
 					del query_components[0]
 				elif str(query_components[0]) in '0123456789':
-					query_buffer = query_buffer + '(SELECT "hash" FROM "' + config.tbl_assoc + '" WHERE "tagid"='
+					query_buffer = query_buffer + '(SELECT "hash" FROM "assoc" WHERE "tagid"='
 					while str(query_components[0]) in '0123456789':
 						query_buffer = query_buffer + str(query_components[0])
 						del query_components[0]
@@ -515,7 +515,7 @@ class LegacyXMLRPC(object):
 		if mode == 'remove':
 			tagid_string = ' OR '.join(['"tagid"='+str(x) for x in tagids])
 			try:
-				cursor.executemany('DELETE FROM "'+config.tbl_assoc+'" WHERE "hash"=%(hash)s AND ('+tagid_string+')', [{'hash':str(x)} for x in hashes])
+				cursor.executemany('DELETE FROM "assoc" WHERE "hash"=%(hash)s AND ('+tagid_string+')', [{'hash':str(x)} for x in hashes])
 			except:
 				connection.rollback()
 				progress_string = progress_string + "Failed to delete tags.<br>\n"
@@ -525,7 +525,7 @@ class LegacyXMLRPC(object):
 			if mode == 'replace': # Delete the old tags before setting up new ones, no way to ignore DB errors when doing this otherwise
 				hash_string = ' OR '.join(['"hash"=\''+str(x)+'\'' for x in hashes])
 				try:
-					cursor.execute('DELETE FROM "'+config.tbl_assoc+'" WHERE '+hash_string)
+					cursor.execute('DELETE FROM "assoc" WHERE '+hash_string)
 				except Exception, data:
 					connection.rollback()
 					progress_string = progress_string + "Failed to delete old tags.<br>\n"
@@ -535,7 +535,7 @@ class LegacyXMLRPC(object):
 			for hash in hashes:
 				for tagid in tagids:
 					try:
-						cursor.execute('DELETE FROM "'+config.tbl_assoc+'" WHERE "hash"=%(h)s and "tagid"=%(t)s', {'h':hash,'t':tagid})
+						cursor.execute('DELETE FROM "assoc" WHERE "hash"=%(h)s and "tagid"=%(t)s', {'h':hash,'t':tagid})
 					except:
 						connection.rollback()
 						progress_string = progress_string + "Failed to remove existing link with overlap %s and %s...<br />\n" % (hash, tagid)
@@ -543,7 +543,7 @@ class LegacyXMLRPC(object):
 					progress_string = progress_string + "Removed old tag %s and %s...<br />\n" % (hash, tagid)
 
 					try:
-						cursor.execute('INSERT INTO "'+config.tbl_assoc+'" VALUES ( %(h)s, '+str(tagid)+' )', {'h':hash})
+						cursor.execute('INSERT INTO "assoc" VALUES ( %(h)s, '+str(tagid)+' )', {'h':hash})
 					except:
 						connection.rollback()
 						progress_string = progress_string + "Failed adding link to attribute %s - %s<br />\n" % (hash, tagid)
@@ -581,7 +581,7 @@ class LegacyXMLRPC(object):
 			connection = self.pool.connection()
 			cursor = connection.cursor()
 			progress_string = progress_string + "Inserting database entry... "
-			cursor.execute('INSERT INTO "'+config.tbl_files+'" ("hash","width","height","ext") VALUES (%(hash)s, %(width)s, %(height)s, %(ext)s)', params)
+			cursor.execute('INSERT INTO "files" ("hash","width","height","ext") VALUES (%(hash)s, %(width)s, %(height)s, %(ext)s)', params)
 			progress_string = progress_string + "Committing database modifications... "
 			connection.commit()
 			cursor.close()
@@ -625,7 +625,7 @@ class LegacyXMLRPC(object):
 			connection = self.pool.connection()
 			cursor = connection.cursor()
 			progress_string = progress_string + "Deleting database entry..."
-			cursor.execute('DELETE FROM "'+config.tbl_files+'" WHERE "hash"=%(hash)s', {"hash":hash} )
+			cursor.execute('DELETE FROM "files" WHERE "hash"=%(hash)s', {"hash":hash} )
 			progress_string = progress_string + "Committing database modifications... "
 			connection.commit()
 			cursor.close()
@@ -683,15 +683,15 @@ class LegacyXMLRPC(object):
 		tag_keys = ["shorthand", "name", "tagid"]
 
 		# These query strings get looped pretty heavily, so no point defining them every iteration down below
-		primary_exact_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+		primary_exact_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "tags" WHERE ' + \
 			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) = %(keyword)s"""
-		secondary_exact_query = 'SELECT "shorthand","name","tagid" FROM "' + config.tbl_tags + '" NATURAL JOIN "' + config.tbl_aliases + '" WHERE "shorthand" = %(keyword)s'
-		primary_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+		secondary_exact_query = 'SELECT "shorthand","name","tagid" FROM "tags" NATURAL JOIN "aliases" WHERE "shorthand" = %(keyword)s'
+		primary_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "tags" WHERE ' + \
 			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) LIKE %(keyword)s"""
-		secondary_query = 'SELECT "shorthand","name","tagid" FROM "' + config.tbl_tags + '" NATURAL JOIN "' + config.tbl_aliases + '" WHERE "shorthand" LIKE %(keyword)s'
-		levenshtein_query= 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+		secondary_query = 'SELECT "shorthand","name","tagid" FROM "tags" NATURAL JOIN "aliases" WHERE "shorthand" LIKE %(keyword)s'
+		levenshtein_query= 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "tags" WHERE ' + \
 			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) LIKE %(keyword)s UNION """ + \
-			'SELECT "shorthand","name","tagid" FROM "' + config.tbl_aliases + '" NATURAL JOIN "' + config.tbl_tags + '" WHERE "shorthand" LIKE %(keyword)s'
+			'SELECT "shorthand","name","tagid" FROM "aliases" NATURAL JOIN "tags" WHERE "shorthand" LIKE %(keyword)s'
 
 
 		try:
@@ -706,7 +706,7 @@ class LegacyXMLRPC(object):
 			if only_digits.match(keyword):
 				tagid = int(keyword)
 				try:
-					cursor.execute('SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE "tagid"=%(tagid)s', {"tagid":tagid} )
+					cursor.execute('SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "tags" WHERE "tagid"=%(tagid)s', {"tagid":tagid} )
 					row = cursor.fetchone()
 					if row is not None:
 						suggestions.add_alike(row[0], dict(zip(tag_keys, row)))

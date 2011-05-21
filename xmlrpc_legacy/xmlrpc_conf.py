@@ -11,6 +11,9 @@ class Production(object):
 	# No authentication, just used to verify deletion requests
 	deletion_password = 'delete_password'
 
+	# Threshold when looking for matching tags, sort of a paranoia safety
+	MAX_LEVENSHTEIN_DISTANCE = 20
+
 	# Old code, theoretically allows you to run >1 instance in a single DB
 	tbl_files = "files"
 	tbl_assoc = "assoc"
@@ -21,7 +24,7 @@ class Production(object):
 
 	# Parameters for connecting to your content server
 	import xmlrpclib
-	master_content_xmlrpc_server = xmlrpclib.ServerProxy("http://tsutako.meidokon.net/xmlrpc.py")
+	master_content_xmlrpc_server = xmlrpclib.ServerProxy("http://datastore.meidokon.net/xmlrpc.py")
 	INSERTION_SHARED_SECRET = "513f401462da13ef997644832767f383b0afe8f4"
 	RELEASE_SHARED_SECRET = "6dbf1c362e11af68ae0e99999e83ad84cfb5e58c"
 	DELETION_SHARED_SECRET = "11c72e42e8f85dee27e52fab7a07b818d1a0905f"

@@ -8,10 +8,12 @@
 #  * python-psycopg2
 #  * python-pygresql
 # * DBUtils - http://pypi.python.org/pypi/DBUtils/
+# * python-levenshtein
 
 
 import sys
 import time
+import re
 import optparse
 import DocXMLRPCServer
 import SocketServer
@@ -22,8 +24,14 @@ import syslog
 
 import psycopg2
 from DBUtils.PooledDB import PooledDB
+from Levenshtein import distance
+from Levenshtein import ratio
+import Suggestions
 from hash_manipulation import *
 from xmlrpc_conf import config_sets
+
+alphanum    = re.compile("""[^a-zA-Z0-9]+""", re.I)
+only_digits = re.compile("""^\d+$""")
 
 
 def prepare_syslog(syslog_name):
@@ -645,6 +653,137 @@ class LegacyXMLRPC(object):
 		return self.return_success(progress_string)
 
 
+	def get_suggestions(self, keyword_list):
+		"""Take a list of keywords, munge them through a Suggestions engine, and return the results
+
+		keyword_list is a list of strings which we will scan the taglists for
+		These "strings" may also be str(int)'s
+		PUT MORE WORDS HERE
+
+		Because our lists are ordered, we add elements from greater->lower likelihood of match
+		Likelihood hierarchy:
+			Raw tagid -- Assume perfect, stop here after you get one
+			Keyword is exact match to a tag -- eg. SAKURA
+			Keyword appears at start of tag -- eg. SAKURAkinomoto
+			Keyword appears at end of tag -- eg. nemuaSAKURA
+			Keyword appears in middle of tag -- eg. aSAKURAryouko
+			Levenshtein match is needed to find a tag -- eg. meganekKo->meganeko
+		Levenshtein assumes that the user isn't completely braindead,
+		ie. they can get the first two characters of the tag correct
+			glasses -> glsses = MATCH
+			glasses -> grasses = NO MATCH
+		This should speed things up considerably, rather than trying to perform
+		levenshtein against hundreds or thousands of names.
+		If we assume even alphabetic distribution of tagnames, enforcing first
+		character correctness presumably shrinks the search space by a factor of 26.
+		With two characters, that should be 26^2, or 676? I think so.
+		"""
+
+		suggestions = Suggestions.Suggestions()
+		tag_keys = ["shorthand", "name", "tagid"]
+
+		# These query strings get looped pretty heavily, so no point defining them every iteration down below
+		primary_exact_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) = %(keyword)s"""
+		secondary_exact_query = 'SELECT "shorthand","name","tagid" FROM "' + config.tbl_tags + '" NATURAL JOIN "' + config.tbl_aliases + '" WHERE "shorthand" = %(keyword)s'
+		primary_query = 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) LIKE %(keyword)s"""
+		secondary_query = 'SELECT "shorthand","name","tagid" FROM "' + config.tbl_tags + '" NATURAL JOIN "' + config.tbl_aliases + '" WHERE "shorthand" LIKE %(keyword)s'
+		levenshtein_query= 'SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE ' + \
+			"""lower(replace(replace(trim(trailing '&#;0123456789/ ' from "name"), '-', ''), ' ', '')) LIKE %(keyword)s UNION """ + \
+			'SELECT "shorthand","name","tagid" FROM "' + config.tbl_aliases + '" NATURAL JOIN "' + config.tbl_tags + '" WHERE "shorthand" LIKE %(keyword)s'
+
+
+		try:
+			connection = self.pool.connection()
+			cursor = connection.cursor()
+		except:
+			return self.return_error("There was a problem connecting to the database.")
+
+
+		for keyword in keyword_list:
+			# Special case, we retrieve the tag and assume they entered the full name *exactly*
+			if only_digits.match(keyword):
+				tagid = int(keyword)
+				try:
+					cursor.execute('SELECT "name" AS "shorthand","name" AS "name","tagid" FROM "' + config.tbl_tags + '" WHERE "tagid"=%(tagid)s', {"tagid":tagid} )
+					row = cursor.fetchone()
+					if row is not None:
+						suggestions.add_alike(row[0], dict(zip(tag_keys, row)))
+					continue
+				except:
+					return self.return_error("Error while checking for match against exact tagid %(tagid)s" % {"tagid":tagid} )
+
+
+			# Attempt EXACT MATCH for keyword->name
+			try:
+				cursor.execute(primary_exact_query, {"keyword":keyword} )
+				resultset = cursor.fetchall()
+				if resultset is not None:
+					for row in resultset:
+						suggestions.add_alike(keyword, dict(zip(tag_keys, row)))
+			except:
+				return self.return_error("Error while checking for primary match against exact keyword %(keyword)s" % {"keyword":keyword} )
+
+			try:
+				cursor.execute(secondary_exact_query, {"keyword":keyword} )
+				resultset = cursor.fetchall()
+				if resultset is not None:
+					for row in resultset:
+						suggestions.add_alike(keyword, dict(zip(tag_keys, row)))
+			except:
+				return self.return_error("Error while checking for secondary match against exact keyword %(keyword)s" % {"keyword":keyword} )
+
+
+			# First query runs against the main tags table, and should catch most cases
+			# Second query is against the tag-alias table
+			# This pair of queries gets made three times, changing only the sql-based string-matching
+			keyword_templates = [	{"keyword":keyword + r'_%'},        # keyword at START
+						{"keyword":r'%_' + keyword},        # keyword at END
+						{"keyword":r'%_' + keyword + r'_%'} # keyword in MIDDLE
+			]
+			try:
+				for keyword_template in keyword_templates:
+					cursor.execute(primary_query, keyword_template)
+					resultset = cursor.fetchall()
+					if resultset is not None:
+						for row in resultset:
+							suggestions.add_alike(keyword, dict(zip(tag_keys, row)))
+
+					cursor.execute(secondary_query, keyword_template)
+					resultset = cursor.fetchall()
+					if resultset is not None:
+						for row in resultset:
+							suggestions.add_alike(keyword, dict(zip(tag_keys, row)))
+			except:
+				return self.return_error("Error while checking for substring match using %(keyword_template)s" % {"keyword_template":keyword_template} )
+
+
+			# Levenshtein matching to account for typos
+			# This is cool, as we can hit the tags table as well as the aliases, at once!
+			try:
+				cursor.execute(levenshtein_query, {"keyword":keyword[0:2] + r'%'} )
+				resultset = cursor.fetchall()
+			except:
+				return self.return_error("Error while searching for levenshtein match on %(keyword)s" % {"keyword":keyword[0:2] + r'%'} )
+
+			if resultset is not None:
+				for row in resultset:
+					if distance(keyword, alphanum.sub('', row[0])) > config.MAX_LEVENSHTEIN_DISTANCE:
+						continue
+					suggestions.add_lev(keyword, dict(zip(tag_keys, row)))
+
+				# Sort the list of levenshtein hits
+				if suggestions.listing.has_key(keyword):
+					(suggestions.listing[keyword]['lev']).sort(key=lambda x: x['ratio'], reverse=True)
+
+
+		cursor.close()
+		connection.close()
+		return self.return_success("Got results from tag search", suggestions.listing)
+
+
+
 	def run(self):
 		#self.server.register_introspection_functions()
 		self.server.register_function(self.get_filedata)
@@ -657,6 +796,7 @@ class LegacyXMLRPC(object):
 		self.server.register_function(self.set_tags)
 		self.server.register_function(self.add_file)
 		self.server.register_function(self.delete_file)
+		self.server.register_function(self.get_suggestions)
 
 		logmsg("Info: listening on %s:%s" % (self.server.server_address[0], self.server.server_address[1]))
 		try:
